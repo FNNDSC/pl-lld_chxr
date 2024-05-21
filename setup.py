@@ -19,18 +19,18 @@ def get_version(rel_path: str) -> str:
 
 
 setup(
-    name='chris-plugin-template',
-    version=get_version('app.py'),
-    description='A ChRIS DS plugin template',
+    name='lld_chxr',
+    version=get_version('lld_chxr.py'),
+    description='A ChRIS plugin to analyze the result produced by an LLD analysis ',
     author='FNNDSC',
     author_email='dev@babyMRI.org',
-    url='https://github.com/FNNDSC/python-chrisapp-template',
-    py_modules=['app'],
+    url='https://github.com/FNNDSC/pl-lld_',
+    py_modules=['lld_chxr'],
     install_requires=['chris_plugin'],
     license='MIT',
     entry_points={
         'console_scripts': [
-            'commandname = app:main'
+            'lld_chxr = lld_chxr:main'
         ]
     },
     classifiers=[
