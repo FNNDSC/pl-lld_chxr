@@ -24,8 +24,17 @@ parser = ArgumentParser(description='A ChRIS plugin to analyze the result produc
                         formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('-f', '--fileFilter', default='json', type=str,
                     help='input file filter glob')
-parser.add_argument('-e', '--marginOfError', default=0.02, type=float,
-                    help='Accepted margin of error in tibia to femur ratio')
+parser.add_argument('-m', '--mesurementsUnit', default='cm', type=str,
+                    help='Accepted unit for length measurements')
+parser.add_argument('-d', '--limbDifference', default=0.0, type=float,
+                    help='Accepted difference in both limbs')
+parser.add_argument('-s', '--splitToken', default='', type=str,
+                    help='If specified, use this token to split the input tags.')
+parser.add_argument('-k', '--splitKeyValue', default='', type=str,
+                    help='If specified, use this char to split key value.')
+parser.add_argument('-t', '--tagInfo', default='', type=str,
+                    help='Specify accepted tags and their values here.')
+
 parser.add_argument('-V', '--version', action='version',
                     version=f'%(prog)s {__version__}')
 
@@ -66,10 +75,10 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     for input_file, output_file in mapper:
         with open(input_file) as f:
             data = json.load(f)
-            analyze_measurements(data,options.marginOfError)
+            analyze_measurements(data,options)
 
 
-def analyze_measurements(data, margin_error):
+def analyze_measurements(data, options):
     """
     Analyze the measurements of lower limbs and verify
     if the measurements are correct.
