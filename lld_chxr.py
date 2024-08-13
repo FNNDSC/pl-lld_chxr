@@ -34,7 +34,6 @@ parser.add_argument('-k', '--splitKeyValue', default='', type=str,
                     help='If specified, use this char to split key value.')
 parser.add_argument('-t', '--tagInfo', default='', type=str,
                     help='Specify accepted tags and their values here.')
-
 parser.add_argument('-V', '--version', action='version',
                     version=f'%(prog)s {__version__}')
 
@@ -71,28 +70,53 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     #
     # Refer to the documentation for more options, examples, and advanced uses e.g.
     # adding a progress bar and parallelism.
+    tagStruct = tagInfo_to_tagStruct(options)
     mapper = PathMapper.file_mapper(inputdir, outputdir, glob=f"**/*.{options.fileFilter}",fail_if_empty=False)
     for input_file, output_file in mapper:
         with open(input_file) as f:
             data = json.load(f)
-            analyze_measurements(data,options)
+            analyze_measurements(data,tagStruct)
 
+def tagInfo_to_tagStruct(options):
+    """
 
-def analyze_measurements(data, options):
+    """
+    if options.tagInfo:
+        lstrip = lambda l: [x.strip() for x in l]
+
+        # Split the string into key/value components
+        l_sdirty: list = options.tagInfo.split(options.splitToken)
+
+        # Now, strip any leading and trailing spaces from list elements
+        l_s: list = lstrip(l_sdirty)
+        d: dict = {}
+
+        l_kvdirty: list = []
+        l_kv: list = []
+        try:
+            for f in l_s:
+                l_kvdirty = f.split(options.splitKeyValue)
+                l_kv = lstrip(l_kvdirty)
+                d[l_kv[0]] = l_kv[1]
+        except:
+            print('Incorrect tag info specified')
+            return
+
+        tagStruct = d.copy()
+        return tagStruct
+
+def analyze_measurements(data, tagStruct):
     """
     Analyze the measurements of lower limbs and verify
     if the measurements are correct.
     """
-    AVG_RATIO = 0.8
+    details={}
     for row in data:
-        rt = data[row]["pixel_distance"]["Right tibia"]
-        rf = data[row]["pixel_distance"]["Right femur"]
-        ratio = round(rt / rf, 2)
-        print(f"Calculated tibia to femur ratio: {ratio} [Average ratio: {AVG_RATIO} ± {margin_error}]")
-        if ratio > AVG_RATIO + margin_error or ratio < AVG_RATIO - margin_error:
-            print("Measurements are incorrect.")
-        else:
-            print("Measurements are correct.")
+        details = data[row]["details"]
+    print(details)
+    for row in tagStruct:
+        print(details[row])
+
 
 
 
