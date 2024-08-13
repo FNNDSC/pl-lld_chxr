@@ -5,6 +5,7 @@ from argparse import ArgumentParser, Namespace, ArgumentDefaultsHelpFormatter
 import json
 from chris_plugin import chris_plugin, PathMapper
 import subprocess
+from difflib import SequenceMatcher
 
 __version__ = '1.0.0'
 
@@ -24,7 +25,7 @@ parser = ArgumentParser(description='A ChRIS plugin to analyze the result produc
                         formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('-f', '--fileFilter', default='json', type=str,
                     help='input file filter glob')
-parser.add_argument('-m', '--mesurementsUnit', default='cm', type=str,
+parser.add_argument('-m', '--measurementsUnit', default='cm', type=str,
                     help='Accepted unit for length measurements')
 parser.add_argument('-d', '--limbDifference', default=0.0, type=float,
                     help='Accepted difference in both limbs')
@@ -75,7 +76,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     for input_file, output_file in mapper:
         with open(input_file) as f:
             data = json.load(f)
-            analyze_measurements(data,tagStruct)
+            analyze_measurements(data,tagStruct, options.measurementsUnit)
 
 def tagInfo_to_tagStruct(options):
     """
@@ -105,19 +106,49 @@ def tagInfo_to_tagStruct(options):
         tagStruct = d.copy()
         return tagStruct
 
-def analyze_measurements(data, tagStruct):
+def analyze_measurements(data, tagStruct, unit):
     """
     Analyze the measurements of lower limbs and verify
     if the measurements are correct.
     """
-    details={}
+    details = {}
+    measurements = {}
     for row in data:
         details = data[row]["details"]
-    print(details)
+        measurements = data[row]["total"]
+
     for row in tagStruct:
-        print(details[row])
+        if similar(tagStruct[row], details[row]) >= 0.8:
+            continue
+        else:
+            print("Tags do not match")
+            return
+    if not unit in  measurements['Difference']:
+        return
+    print("Analysis check successful.")
 
+def similar(a: str, b: str):
+    """
+    Return a similarity ration between two strings
 
+    Examples:
+    In [4]: similar("Apple","Appel")
+    Out[4]: 0.8
+
+    In [5]: similar("apple","apple")
+    Out[5]: 1.0
+
+    In [6]: similar("20/12/2024","2011212024")
+    Out[6]: 0.8
+
+    In [7]: similar("apple","dimple")
+    Out[7]: 0.5454545454545454
+
+    In [8]: similar("12/20/2024","2011012003")
+    Out[8]: 0.4
+
+    """
+    return SequenceMatcher(None, a, b).ratio()
 
 
 if __name__ == '__main__':
