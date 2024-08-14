@@ -6,6 +6,8 @@ import json
 from chris_plugin import chris_plugin, PathMapper
 import subprocess
 from difflib import SequenceMatcher
+import re
+import sys
 
 __version__ = '1.0.0'
 
@@ -25,9 +27,9 @@ parser = ArgumentParser(description='A ChRIS plugin to analyze the result produc
                         formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('-f', '--fileFilter', default='json', type=str,
                     help='input file filter glob')
-parser.add_argument('-m', '--measurementsUnit', default='cm', type=str,
+parser.add_argument('-m', '--measurementsUnit', default='', type=str,
                     help='Accepted unit for length measurements')
-parser.add_argument('-d', '--limbDifference', default=0.0, type=float,
+parser.add_argument('-d', '--limbDifference', default=sys.float_info.max, type=float,
                     help='Accepted difference in both limbs')
 parser.add_argument('-s', '--splitToken', default='', type=str,
                     help='If specified, use this token to split the input tags.')
@@ -71,16 +73,20 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     #
     # Refer to the documentation for more options, examples, and advanced uses e.g.
     # adding a progress bar and parallelism.
-    tagStruct = tagInfo_to_tagStruct(options)
+    tagStruct = {}
+    if options.tagInfo:
+        tagStruct = tagInfo_to_tagStruct(options)
+
     mapper = PathMapper.file_mapper(inputdir, outputdir, glob=f"**/*.{options.fileFilter}",fail_if_empty=False)
     for input_file, output_file in mapper:
         with open(input_file) as f:
             data = json.load(f)
-            analyze_measurements(data,tagStruct, options.measurementsUnit)
+            status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference)
+            print(status)
 
 def tagInfo_to_tagStruct(options):
     """
-
+    Convert DICOM tag info in string to a dictionary.
     """
     if options.tagInfo:
         lstrip = lambda l: [x.strip() for x in l]
@@ -106,11 +112,12 @@ def tagInfo_to_tagStruct(options):
         tagStruct = d.copy()
         return tagStruct
 
-def analyze_measurements(data, tagStruct, unit):
+def analyze_measurements(data, tagStruct, unit, diff):
     """
     Analyze the measurements of lower limbs and verify
     if the measurements are correct.
     """
+    status = {}
     details = {}
     measurements = {}
     for row in data:
@@ -118,14 +125,44 @@ def analyze_measurements(data, tagStruct, unit):
         measurements = data[row]["total"]
 
     for row in tagStruct:
-        if similar(tagStruct[row], details[row]) >= 0.8:
-            continue
-        else:
-            print("Tags do not match")
-            return
+        try:
+            if similar(tagStruct[row], details[row]) >= 0.8 or re.search(tagStruct[row], details[row],re.IGNORECASE):
+                continue
+            else:
+                status['error'] = f"{row} does not match"
+                status['exitCode'] = 1
+                status['flag'] = False
+                print(f"{row} does not match")
+                return status
+        except Exception as ex:
+            status['error'] = f"{ex} not available for match."
+            status['exitCode'] = 4
+            status['flag'] = False
+            print(f"{ex} not available for match.")
+            return status
     if not unit in  measurements['Difference']:
-        return
+        status['error'] = "Measurement units do not match."
+        status['exitCode'] = 2
+        status['flag'] = False
+        print("Measurement units do not match.")
+        return status
+
+    match = re.search(r'\d.\d%',measurements['Difference']).group()
+    difference = match.replace('%','')
+    if not  float(difference) <= diff:
+        status['error'] = f"Allowed difference {diff}, actual difference {difference}"
+        status['exitCode'] = 3
+        status['flag'] = False
+        print(f"Allowed difference {diff}, actual difference {difference}")
+        return status
+
     print("Analysis check successful.")
+    status['error'] = ""
+    status['exitCode'] = 0
+    status['flag'] = True
+    return status
+
+
 
 def similar(a: str, b: str):
     """
@@ -148,7 +185,7 @@ def similar(a: str, b: str):
     Out[8]: 0.4
 
     """
-    return SequenceMatcher(None, a, b).ratio()
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 
 if __name__ == '__main__':
