@@ -8,6 +8,7 @@ import subprocess
 from difflib import SequenceMatcher
 import re
 import sys
+import os
 
 __version__ = '1.0.0'
 
@@ -73,6 +74,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     #
     # Refer to the documentation for more options, examples, and advanced uses e.g.
     # adding a progress bar and parallelism.
+    jsonFilePath = os.path.join(options.outputdir, "status.json")
     tagStruct = {}
     if options.tagInfo:
         tagStruct = tagInfo_to_tagStruct(options)
@@ -81,8 +83,12 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     for input_file, output_file in mapper:
         with open(input_file) as f:
             data = json.load(f)
-            status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference)
-            print(status)
+            status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference) \
+            # Open a json writer, and use the json.dumps()
+            # function to dump data
+            with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
+                jsonf.write(json.dumps(status, indent=4))
+
 
 def tagInfo_to_tagStruct(options):
     """
@@ -150,10 +156,10 @@ def analyze_measurements(data, tagStruct, unit, diff):
     match = re.search(r'\d.\d%',measurements['Difference']).group()
     difference = match.replace('%','')
     if not  float(difference) <= diff:
-        status['error'] = f"Allowed difference {diff}, actual difference {difference}"
+        status['error'] = f"Allowed difference {diff}%, actual difference {difference}%"
         status['exitCode'] = 3
         status['flag'] = False
-        print(f"Allowed difference {diff}, actual difference {difference}")
+        print(f"Allowed difference {diff}%, actual difference {difference}%")
         return status
 
     print("Analysis check successful.")
