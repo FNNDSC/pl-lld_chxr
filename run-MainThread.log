@@ -1,0 +1,60 @@
+2024-08-15T13:22:59.483171-04:00	START
+2024-08-15T13:23:09.169609-04:00	
+{
+    "status": false,
+    "message": "a failure occured",
+    "obj": {
+        "status": false,
+        "run": {
+            "stdout": "",
+            "stderr": "usage: lld_chxr [-h] [-f FILEFILTER] [-m MEASUREMENTSUNIT] [-d LIMBDIFFERENCE]\n                [-s SPLITTOKEN] [-k SPLITKEYVALUE] [-t TAGINFO] [-V]\n                inputdir outputdir\nlld_chxr: error: the following arguments are required: inputdir, outputdir\n",
+            "cmd": "./cmd.sh",
+            "cwd": "/home/sandip/pl-lld_chxr",
+            "returncode": 2
+        },
+        "rep": {
+            "error": "could not pull image"
+        }
+    }
+}
+2024-08-15T13:23:09.169812-04:00	END
+2024-08-15T13:24:06.059821-04:00	START
+2024-08-15T13:24:08.069216-04:00	
+{
+    "status": false,
+    "message": "a failure occured",
+    "obj": {
+        "status": false,
+        "run": {
+            "stdout": "",
+            "stderr": "usage: lld_chxr [-h] [-f FILEFILTER] [-m MEASUREMENTSUNIT] [-d LIMBDIFFERENCE]\n                [-s SPLITTOKEN] [-k SPLITKEYVALUE] [-t TAGINFO] [-V]\n                inputdir outputdir\nlld_chxr: error: the following arguments are required: inputdir, outputdir\n",
+            "cmd": "./cmd.sh",
+            "cwd": "/home/sandip/pl-lld_chxr",
+            "returncode": 2
+        },
+        "rep": {
+            "error": "could not pull image"
+        }
+    }
+}
+2024-08-15T13:24:08.069359-04:00	END
+2024-08-15T13:25:03.350894-04:00	START
+2024-08-15T13:25:05.255792-04:00	
+{
+    "status": false,
+    "message": "a failure occured",
+    "obj": {
+        "status": false,
+        "run": {
+            "stdout": "",
+            "stderr": "usage: lld_chxr [-h] [-f FILEFILTER] [-m MEASUREMENTSUNIT] [-d LIMBDIFFERENCE]\n                [-s SPLITTOKEN] [-k SPLITKEYVALUE] [-t TAGINFO] [-V]\n                inputdir outputdir\nlld_chxr: error: the following arguments are required: inputdir, outputdir\n",
+            "cmd": "./cmd.sh",
+            "cwd": "/home/sandip/pl-lld_chxr",
+            "returncode": 2
+        },
+        "rep": {
+            "error": "could not pull image"
+        }
+    }
+}
+2024-08-15T13:25:05.255937-04:00	END
