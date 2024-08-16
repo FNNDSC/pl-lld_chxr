@@ -11,7 +11,7 @@ import sys
 import os
 from shutil import copytree, ignore_patterns
 
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -157,7 +157,8 @@ def analyze_measurements(data, tagStruct, unit, diff):
         print("Measurement units do not match.")
         return status
 
-    match = re.search(r'\d.\d%',measurements['Difference']).group()
+    match = re.search(r'\d+\.\d+%',measurements['Difference']).group()
+    print(match)
     difference = match.replace('%','')
     if not  float(difference) <= diff:
         status['error'] = f"Allowed difference {diff}%, actual difference {difference}%"
