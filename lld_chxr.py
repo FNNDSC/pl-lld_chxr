@@ -9,8 +9,9 @@ from difflib import SequenceMatcher
 import re
 import sys
 import os
+from shutil import copytree, ignore_patterns
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -78,13 +79,15 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     tagStruct = {}
     if options.tagInfo:
         tagStruct = tagInfo_to_tagStruct(options)
-
     mapper = PathMapper.file_mapper(inputdir, outputdir, glob=f"**/*{options.fileFilter}",fail_if_empty=False)
     for input_file, output_file in mapper:
         print(input_file)
         with open(input_file) as f:
             data = json.load(f)
-            status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference) \
+            status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference)
+            if status['flag']:
+                files_dir = copytree(inputdir, outputdir,dirs_exist_ok=True,ignore=ignore_patterns('*.json'))
+                print(f"copying files to {files_dir} done.")
             # Open a json writer, and use the json.dumps()
             # function to dump data
             with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
