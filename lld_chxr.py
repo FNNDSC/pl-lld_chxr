@@ -130,6 +130,9 @@ def analyze_measurements(data, tagStruct, unit, diff):
     status = {}
     details = {}
     measurements = {}
+    status['error'] = []
+    status['exitCode'] = 0
+    status['flag'] = True
     for row in data:
         details = data[row]["details"]
         measurements = data[row]["total"]
@@ -139,38 +142,37 @@ def analyze_measurements(data, tagStruct, unit, diff):
             if similar(tagStruct[row], details[row]) >= 0.8 or re.search(tagStruct[row], details[row],re.IGNORECASE):
                 continue
             else:
-                status['error'] = f"{row} does not match"
+                status['error'].append(f"{row} does not match: Expected {tagStruct[row]}, actual {details[row]}")
                 status['exitCode'] = 1
                 status['flag'] = False
-                print(f"{row} does not match")
-                return status
+                print(f"{row} does not match: Expected {tagStruct[row]}, actual {details[row]}")
+                #return status
         except Exception as ex:
-            status['error'] = f"{ex} not available for match."
+            status['error'].append(f"{ex} not available for match.")
             status['exitCode'] = 4
             status['flag'] = False
             print(f"{ex} not available for match.")
-            return status
-    if not unit in  measurements['Difference']:
-        status['error'] = "Measurement units do not match."
+            #return status
+    match = re.search(r'\d+\.\d+ \w+', measurements['Difference']).group()
+    m_unit = match.split()[1]
+    if m_unit != unit:
+        status['error'].append(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
         status['exitCode'] = 2
         status['flag'] = False
-        print("Measurement units do not match.")
-        return status
+        print(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
+        #return status
 
     match = re.search(r'\d+\.\d+%',measurements['Difference']).group()
-    print(match)
     difference = match.replace('%','')
+
     if not  float(difference) <= diff:
-        status['error'] = f"Allowed difference {diff}%, actual difference {difference}%"
+        status['error'].append(f"Allowed difference {diff}%, actual difference {difference}%")
         status['exitCode'] = 3
         status['flag'] = False
         print(f"Allowed difference {diff}%, actual difference {difference}%")
-        return status
+        #return status
 
     print("Analysis check successful.")
-    status['error'] = ""
-    status['exitCode'] = 0
-    status['flag'] = True
     return status
 
 
