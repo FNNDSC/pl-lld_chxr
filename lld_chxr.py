@@ -10,8 +10,21 @@ import re
 import sys
 import os
 from shutil import copytree, ignore_patterns
+from loguru import logger
+LOG             = logger.debug
+logger_format = (
+    "<green>{time:YYYY-MM-DD HH:mm:ss}</green> │ "
+    "<level>{level: <5}</level> │ "
+    "<yellow>{name: >28}</yellow>::"
+    "<cyan>{function: <30}</cyan> @"
+    "<cyan>{line: <4}</cyan> ║ "
+    "<level>{message}</level>"
+)
+logger.remove()
+logger.opt(colors = True)
+logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -22,7 +35,7 @@ DISPLAY_TITLE = r"""
 | .__/|_|      |_|_|\__,_| \___|_| |_/_/\_\_|   
 | |                    ______                   
 |_|                   |______|                  
-"""
+""" + "\t\t -- version " + __version__ + " --\n\n"
 
 
 parser = ArgumentParser(description='A ChRIS plugin to analyze the result produced by an LLD analysis ',
@@ -41,7 +54,19 @@ parser.add_argument('-t', '--tagInfo', default='', type=str,
                     help='Specify accepted tags and their values here.')
 parser.add_argument('-V', '--version', action='version',
                     version=f'%(prog)s {__version__}')
-
+def preamble_show(options: Namespace) -> None:
+    """
+    Just show some preamble "noise" in the output terminal
+    """
+    LOG(DISPLAY_TITLE)
+    LOG("plugin arguments...")
+    for k,v in options.__dict__.items():
+         LOG("%25s:  [%s]" % (k, v))
+    LOG("")
+    LOG("base environment...")
+    for k,v in os.environ.items():
+         LOG("%25s:  [%s]" % (k, v))
+    LOG("")
 
 # The main function of this *ChRIS* plugin is denoted by this ``@chris_plugin`` "decorator."
 # Some metadata about the plugin is specified here. There is more metadata specified in setup.py.
@@ -66,7 +91,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     :param outputdir: directory where to write output files
     """
 
-    print(DISPLAY_TITLE)
+    preamble_show(options)
 
     # Typically it's easier to think of programs as operating on individual files
     # rather than directories. The helper functions provided by a ``PathMapper``
@@ -81,13 +106,14 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
         tagStruct = tagInfo_to_tagStruct(options)
     mapper = PathMapper.file_mapper(inputdir, outputdir, glob=f"**/*{options.fileFilter}",fail_if_empty=False)
     for input_file, output_file in mapper:
-        print(input_file)
+        LOG(input_file)
         with open(input_file) as f:
             data = json.load(f)
             status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference)
             if status['flag']:
+                LOG("Analysis check successful.")
                 files_dir = copytree(inputdir, outputdir,dirs_exist_ok=True,ignore=ignore_patterns('*.json'))
-                print(f"copying files to {files_dir} done.")
+                LOG(f"copying files to {files_dir} done.")
             # Open a json writer, and use the json.dumps()
             # function to dump data
             with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
@@ -116,7 +142,7 @@ def tagInfo_to_tagStruct(options):
                 l_kv = lstrip(l_kvdirty)
                 d[l_kv[0]] = l_kv[1]
         except:
-            print('Incorrect tag info specified')
+            LOG('Incorrect tag info specified')
             return
 
         tagStruct = d.copy()
@@ -145,13 +171,13 @@ def analyze_measurements(data, tagStruct, unit, diff):
                 status['error'].append(f"{row} does not match: Expected {tagStruct[row]}, actual {details[row]}")
                 status['exitCode'] = 1
                 status['flag'] = False
-                print(f"{row} does not match: Expected {tagStruct[row]}, actual {details[row]}")
+                LOG(f"{row} does not match: Expected {tagStruct[row]}, actual {details[row]}")
                 #return status
         except Exception as ex:
             status['error'].append(f"{ex} not available for match.")
             status['exitCode'] = 4
             status['flag'] = False
-            print(f"{ex} not available for match.")
+            LOG(f"{ex} not available for match.")
             #return status
     match = re.search(r'\d+\.\d+ \w+', measurements['Difference']).group()
     m_unit = match.split()[1]
@@ -159,7 +185,7 @@ def analyze_measurements(data, tagStruct, unit, diff):
         status['error'].append(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
         status['exitCode'] = 2
         status['flag'] = False
-        print(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
+        LOG(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
         #return status
 
     match = re.search(r'\d+\.\d+%',measurements['Difference']).group()
@@ -169,10 +195,9 @@ def analyze_measurements(data, tagStruct, unit, diff):
         status['error'].append(f"Allowed difference {diff}%, actual difference {difference}%")
         status['exitCode'] = 3
         status['flag'] = False
-        print(f"Allowed difference {diff}%, actual difference {difference}%")
+        LOG(f"Allowed difference {diff}%, actual difference {difference}%")
         #return status
 
-    print("Analysis check successful.")
     return status
 
 
