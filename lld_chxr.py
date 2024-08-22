@@ -11,6 +11,8 @@ import sys
 import os
 from shutil import copytree, ignore_patterns
 from loguru import logger
+import ntpath
+
 LOG             = logger.debug
 logger_format = (
     "<green>{time:YYYY-MM-DD HH:mm:ss}</green> │ "
@@ -24,7 +26,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.0.6'
+__version__ = '1.0.8'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -100,13 +102,15 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
     #
     # Refer to the documentation for more options, examples, and advanced uses e.g.
     # adding a progress bar and parallelism.
-    jsonFilePath = os.path.join(options.outputdir, "status.json")
+
     tagStruct = {}
     if options.tagInfo:
         tagStruct = tagInfo_to_tagStruct(options)
     mapper = PathMapper.file_mapper(inputdir, outputdir, glob=f"**/*{options.fileFilter}",fail_if_empty=False)
     for input_file, output_file in mapper:
         LOG(input_file)
+        filename = ntpath.basename(input_file)
+        jsonFilePath = os.path.join(options.outputdir, filename.replace(options.fileFilter,"status.json"))
         with open(input_file) as f:
             data = json.load(f)
             status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference)
