@@ -26,7 +26,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.0.8'
+__version__ = '1.1.0'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -182,8 +182,9 @@ def analyze_measurements(data, tagStruct, unit, diff):
             status['exitCode'] = 4
             status['flag'] = False
             LOG(f"{ex} not available for match.")
-            #return status
-    match = re.search(r'\d+\.\d+ \w+', measurements['Difference']).group()
+
+    # check if the difference info contains measurements in the desired units.
+    match = re.search(r'\d+ \w+', measurements['Difference']).group()
     m_unit = match.split()[1]
     if m_unit != unit:
         status['error'].append(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
@@ -192,6 +193,7 @@ def analyze_measurements(data, tagStruct, unit, diff):
         LOG(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
         #return status
 
+    # check if the difference info contains a float % representing limb difference.
     match = re.search(r'\d+\.\d+%',measurements['Difference']).group()
     difference = match.replace('%','')
 

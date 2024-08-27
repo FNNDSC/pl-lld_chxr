@@ -100,3 +100,44 @@
     }
 }
 2024-08-15T13:38:30.188185-04:00	END
+2024-08-15T13:57:54.596903-04:00	START
+2024-08-15T13:58:05.116494-04:00	
+{
+    "status": true,
+    "obj": {
+        "run": {
+            "status": true,
+            "stdout": {
+                "id": 96,
+                "creation_date": "2024-08-15T13:58:05.027305-04:00",
+                "name": "pl-lld_chxr",
+                "version": "1.0.3",
+                "dock_image": "ghcr.io/fnndsc/pl-lld_chxr:1.0.3",
+                "public_repo": "https://github.com/FNNDSC/pl-lld_chxr",
+                "icon": "",
+                "type": "ds",
+                "stars": 0,
+                "authors": "FNNDSC <dev@babyMRI.org>",
+                "title": "A ChRIS plugin to analyze the result produced by an LLD analysis",
+                "category": "",
+                "description": "A ChRIS plugin to analyze the result produced by an LLD analysis",
+                "documentation": "https://github.com/FNNDSC/pl-lld_",
+                "license": "MIT",
+                "execshell": "/usr/local/bin/python",
+                "selfpath": "/usr/local/bin",
+                "selfexec": "lld_chxr",
+                "min_number_of_workers": 1,
+                "max_number_of_workers": 1,
+                "min_cpu_limit": 1000,
+                "max_cpu_limit": 2147483647,
+                "min_memory_limit": 100,
+                "max_memory_limit": 2147483647,
+                "min_gpu_limit": 0,
+                "max_gpu_limit": 0
+            },
+            "stderr": "",
+            "returncode": 0
+        }
+    }
+}
+2024-08-15T13:58:05.116702-04:00	END
