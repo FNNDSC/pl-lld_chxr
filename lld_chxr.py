@@ -26,7 +26,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.1.0'
+__version__ = '1.1.2'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -108,7 +108,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
         tagStruct = tagInfo_to_tagStruct(options)
     mapper = PathMapper.file_mapper(inputdir, outputdir, glob=f"**/*{options.fileFilter}",fail_if_empty=False)
     for input_file, output_file in mapper:
-        LOG(input_file)
+        LOG(f"Reading input file {input_file}")
         filename = ntpath.basename(input_file)
         jsonFilePath = os.path.join(options.outputdir, filename.replace(options.fileFilter,"status.json"))
         with open(input_file) as f:
@@ -118,6 +118,8 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
                 LOG("Analysis check successful.")
                 files_dir = copytree(inputdir, outputdir,dirs_exist_ok=True,ignore=ignore_patterns('*.json'))
                 LOG(f"copying files to {files_dir} done.")
+            else:
+                LOG(f"QA check failed with exit code {status['exitCode']}")
             # Open a json writer, and use the json.dumps()
             # function to dump data
             with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
@@ -202,7 +204,7 @@ def analyze_measurements(data, tagStruct, unit, diff):
         status['exitCode'] = 3
         status['flag'] = False
         LOG(f"Allowed difference {diff}%, actual difference {difference}%")
-        #return status
+
 
     return status
 
