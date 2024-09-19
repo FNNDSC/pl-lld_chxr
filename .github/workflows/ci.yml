@@ -19,7 +19,7 @@ on:
 jobs:
   test:
     name: Unit tests
-    if: false  # delete this line to enable automatic testing
+    if: False
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -94,7 +94,7 @@ jobs:
 
         # Here, we want to do the docker build twice:
         # The first build pushes to our local registry for testing.
-        # The second build pushes to Docker Hub and ghcr.io 
+        # The second build pushes to Docker Hub and ghcr.io
       - name: Build (local only)
         uses: docker/build-push-action@v3
         id: docker_build
