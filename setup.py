@@ -24,7 +24,7 @@ setup(
     description='A ChRIS plugin to analyze the result produced by an LLD analysis ',
     author='FNNDSC',
     author_email='dev@babyMRI.org',
-    url='https://github.com/FNNDSC/pl-lld_',
+    url='https://github.com/FNNDSC/pl-lld_chxr#readme',
     py_modules=['lld_chxr'],
     install_requires=['chris_plugin'],
     license='MIT',
