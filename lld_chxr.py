@@ -48,9 +48,9 @@ parser.add_argument('-m', '--measurementsUnit', default='', type=str,
                     help='Accepted unit for length measurements')
 parser.add_argument('-d', '--limbDifference', default=sys.float_info.max, type=float,
                     help='Accepted difference in both limbs')
-parser.add_argument('-d', '--tibiaDifference', default=sys.float_info.max, type=float,
+parser.add_argument('-b', '--tibiaDifference', default=sys.float_info.max, type=float,
                     help='Accepted tibia difference in both limbs')
-parser.add_argument('-d', '--femurDifference', default=sys.float_info.max, type=float,
+parser.add_argument('-r', '--femurDifference', default=sys.float_info.max, type=float,
                     help='Accepted femur difference in both limbs')
 parser.add_argument('-s', '--splitToken', default='', type=str,
                     help='If specified, use this token to split the input tags.')
