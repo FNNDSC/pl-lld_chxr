@@ -26,7 +26,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -48,6 +48,10 @@ parser.add_argument('-m', '--measurementsUnit', default='', type=str,
                     help='Accepted unit for length measurements')
 parser.add_argument('-d', '--limbDifference', default=sys.float_info.max, type=float,
                     help='Accepted difference in both limbs')
+parser.add_argument('-d', '--tibiaDifference', default=sys.float_info.max, type=float,
+                    help='Accepted tibia difference in both limbs')
+parser.add_argument('-d', '--femurDifference', default=sys.float_info.max, type=float,
+                    help='Accepted femur difference in both limbs')
 parser.add_argument('-s', '--splitToken', default='', type=str,
                     help='If specified, use this token to split the input tags.')
 parser.add_argument('-k', '--splitKeyValue', default='', type=str,
@@ -113,7 +117,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
         jsonFilePath = os.path.join(options.outputdir, filename.replace(options.fileFilter,"status.json"))
         with open(input_file) as f:
             data = json.load(f)
-            status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference)
+            status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference, options.tibiaDifference, options.femurDifference)
             if status['flag']:
                 LOG("Analysis check successful.")
                 files_dir = copytree(inputdir, outputdir,dirs_exist_ok=True,ignore=ignore_patterns('*.json'))
@@ -154,20 +158,24 @@ def tagInfo_to_tagStruct(options):
         tagStruct = d.copy()
         return tagStruct
 
-def analyze_measurements(data, tagStruct, unit, diff):
+def analyze_measurements(data, tagStruct, unit, tot_diff, tib_diff, fem_diff):
     """
     Analyze the measurements of lower limbs and verify
     if the measurements are correct.
     """
     status = {}
     details = {}
-    measurements = {}
+    femur = {}
+    tibia = {}
+    total = {}
     status['error'] = []
     status['exitCode'] = 0
     status['flag'] = True
     for row in data:
         details = data[row]["details"]
-        measurements = data[row]["total"]
+        femur = data[row]["femur"]
+        tibia = data[row]["tibia"]
+        total = data[row]["total"]
 
     for row in tagStruct:
         try:
@@ -186,7 +194,7 @@ def analyze_measurements(data, tagStruct, unit, diff):
             LOG(f"{ex} not available for match.")
 
     # check if the difference info contains measurements in the desired units.
-    match = re.search(r'\d+ \w+', measurements['Difference']).group()
+    match = re.search(r'\d+ \w+', total['Difference']).group()
     m_unit = match.split()[1]
     if m_unit != unit:
         status['error'].append(f"Measurement units do not match: Expected {unit}, actual {m_unit}")
@@ -196,14 +204,20 @@ def analyze_measurements(data, tagStruct, unit, diff):
         #return status
 
     # check if the difference info contains a float % representing limb difference.
-    match = re.search(r'\d+\.\d+%',measurements['Difference']).group()
-    difference = match.replace('%','')
+    tibia_match = re.search(r'\d+\.\d+%',total['Difference']).group()
+    total_difference = tibia_match.replace('%','')
+    tibia_match = re.search(r'\d+\.\d+%', tibia['Difference']).group()
+    tibia_difference = tibia_match.replace('%', '')
+    femur_match = re.search(r'\d+\.\d+%', femur['Difference']).group()
+    femur_difference = femur_match.replace('%', '')
 
-    if not  float(difference) <= diff:
-        status['error'].append(f"Allowed difference {diff}%, actual difference {difference}%")
+    if ((float(total_difference) > tot_diff)
+            or (float(femur_difference)  > fem_diff)
+            or (float(tibia_difference) > tib_diff)):
+        status['error'].append(f"Actual difference exceeds allowed difference")
         status['exitCode'] = 3
         status['flag'] = False
-        LOG(f"Allowed difference {diff}%, actual difference {difference}%")
+        LOG(f"Actual difference exceeds allowed difference")
 
 
     return status
