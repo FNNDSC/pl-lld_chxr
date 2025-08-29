@@ -26,7 +26,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -124,6 +124,8 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
                 LOG(f"copying files to {files_dir} done.")
             else:
                 LOG(f"QA check failed with exit code {status['exitCode']}")
+                # save the original dicom file as image with error label
+                save_original_file(dicom_data_path,options.errorLabel)
             # Open a json writer, and use the json.dumps()
             # function to dump data
             with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
