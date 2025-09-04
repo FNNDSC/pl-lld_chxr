@@ -8,4 +8,3 @@ matplotlib
 pylibjpeg
 pylibjpeg-libjpeg
 python-gdcm
-opencv-python

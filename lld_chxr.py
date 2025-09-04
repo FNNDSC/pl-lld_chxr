@@ -13,13 +13,10 @@ from shutil import copytree, ignore_patterns
 from loguru import logger
 import ntpath
 import pydicom
-from pydicom.pixel_data_handlers import convert_color_space
 from PIL import Image
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
-from PIL import Image, ImageDraw, ImageFont
 
 matplotlib.rcParams['font.family'] = 'monospace'
 LOG             = logger.debug
