@@ -10,6 +10,7 @@ import re
 import sys
 import os
 from shutil import copytree, ignore_patterns
+import shutil
 from loguru import logger
 import ntpath
 import pydicom
@@ -32,7 +33,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.1.7'
+__version__ = '1.1.8'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -221,6 +222,9 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
                 for filename in os.listdir(inputdir):
                     if filename.endswith(".dcm"):
                         options.inputDicomFileName = filename
+                        source = os.path.join(inputdir, filename)
+                        destination = os.path.join(outputdir, filename)
+                        shutil.copy(source, destination)
                         full_path = os.path.join(inputdir, filename)
                         matching_files.append(full_path)
                 save_original_file(matching_files[0],options)
