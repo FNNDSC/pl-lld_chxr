@@ -12,7 +12,16 @@ import os
 from shutil import copytree, ignore_patterns
 from loguru import logger
 import ntpath
+import pydicom
+from pydicom.pixel_data_handlers import convert_color_space
+from PIL import Image
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import cv2
+from PIL import Image, ImageDraw, ImageFont
 
+matplotlib.rcParams['font.family'] = 'monospace'
 LOG             = logger.debug
 logger_format = (
     "<green>{time:YYYY-MM-DD HH:mm:ss}</green> │ "
@@ -39,27 +48,112 @@ DISPLAY_TITLE = r"""
 |_|                   |______|                  
 """ + "\t\t -- version " + __version__ + " --\n\n"
 
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+import sys
 
-parser = ArgumentParser(description='A ChRIS plugin to analyze the result produced by an LLD analysis ',
-                        formatter_class=ArgumentDefaultsHelpFormatter)
-parser.add_argument('-f', '--fileFilter', default='json', type=str,
-                    help='input file filter glob')
-parser.add_argument('-m', '--measurementsUnit', default='', type=str,
-                    help='Accepted unit for length measurements')
-parser.add_argument('-d', '--limbDifference', default=sys.float_info.max, type=float,
-                    help='Accepted difference in both limbs')
-parser.add_argument('-b', '--tibiaDifference', default=sys.float_info.max, type=float,
-                    help='Accepted tibia difference in both limbs')
-parser.add_argument('-r', '--femurDifference', default=sys.float_info.max, type=float,
-                    help='Accepted femur difference in both limbs')
-parser.add_argument('-s', '--splitToken', default='', type=str,
-                    help='If specified, use this token to split the input tags.')
-parser.add_argument('-k', '--splitKeyValue', default='', type=str,
-                    help='If specified, use this char to split key value.')
-parser.add_argument('-t', '--tagInfo', default='', type=str,
-                    help='Specify accepted tags and their values here.')
-parser.add_argument('-V', '--version', action='version',
-                    version=f'%(prog)s {__version__}')
+parser = ArgumentParser(
+    description='A ChRIS plugin to analyze the result produced by an LLD analysis',
+    formatter_class=ArgumentDefaultsHelpFormatter
+)
+
+# Input and filtering options
+parser.add_argument(
+    '-f', '--fileFilter',
+    type=str,
+    default='json',
+    help='Input file filter glob'
+)
+
+# Measurement settings
+parser.add_argument(
+    '-m', '--measurementsUnit',
+    type=str,
+    default='',
+    help='Accepted unit for length measurements'
+)
+parser.add_argument(
+    '-d', '--limbDifference',
+    type=float,
+    default=sys.float_info.max,
+    help='Accepted difference in both limbs'
+)
+parser.add_argument(
+    '-b', '--tibiaDifference',
+    type=float,
+    default=sys.float_info.max,
+    help='Accepted tibia difference in both limbs'
+)
+parser.add_argument(
+    '-r', '--femurDifference',
+    type=float,
+    default=sys.float_info.max,
+    help='Accepted femur difference in both limbs'
+)
+
+# Tag and key-value splitting
+parser.add_argument(
+    '-s', '--splitToken',
+    type=str,
+    default='',
+    help='If specified, use this token to split the input tags.'
+)
+parser.add_argument(
+    '-k', '--splitKeyValue',
+    type=str,
+    default='',
+    help='If specified, use this char to split key-value.'
+)
+parser.add_argument(
+    '-t', '--tagInfo',
+    type=str,
+    default='',
+    help='Specify accepted tags and their values here.'
+)
+
+# Image output customization
+parser.add_argument(
+    '--outputImageExtension',
+    dest='outputImageExtension',
+    type=str,
+    default='jpg',
+    help='Generated output image file extension (default: jpg)'
+)
+parser.add_argument(
+    '--addTextPos', '-q',
+    dest='addTextPos',
+    type=str,
+    default='top',
+    help='Position of text placement on an input image; "top" or "bottom"'
+)
+parser.add_argument(
+    '--addText',
+    dest='addText',
+    type=str,
+    default='',
+    help='Optional text to add on the final image'
+)
+parser.add_argument(
+    '--addTextSize',
+    dest='addTextSize',
+    type=float,
+    default=5.0,
+    help='Size of additional text on the final output (default: 5)'
+)
+parser.add_argument(
+    '--addTextColor',
+    dest='addTextColor',
+    type=str,
+    default='white',
+    help='Color of additional text on the final output (default: white)'
+)
+
+# Version
+parser.add_argument(
+    '-V', '--version',
+    action='version',
+    version=f'%(prog)s {__version__}'
+)
+
 def preamble_show(options: Namespace) -> None:
     """
     Just show some preamble "noise" in the output terminal
@@ -124,13 +218,180 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
                 LOG(f"copying files to {files_dir} done.")
             else:
                 LOG(f"QA check failed with exit code {status['exitCode']}")
+
                 # save the original dicom file as image with error label
-                save_original_file(dicom_data_path,options.errorLabel)
+                matching_files = []
+                for filename in os.listdir(inputdir):
+                    if filename.endswith(".dcm"):
+                        options.inputDicomFileName = filename
+                        full_path = os.path.join(inputdir, filename)
+                        matching_files.append(full_path)
+                save_original_file(matching_files[0],options)
+
             # Open a json writer, and use the json.dumps()
             # function to dump data
             with open(jsonFilePath, 'w', encoding='utf-8') as jsonf:
                 jsonf.write(json.dumps(status, indent=4))
 
+def save_original_file(dicom_path, options):
+    ds = read_dicom(dicom_path)
+    image = dicom_to_image(ds)
+    label_image(image, options)
+
+def read_dicom(path):
+    try:
+        ds = pydicom.dcmread(path)
+        return ds
+    except Exception as e:
+        LOG(f"Error reading DICOM file: {e}")
+        return None
+
+def dicom_to_image(ds):
+    if not hasattr(ds, "PixelData"):
+        print("No image data found in the DICOM file.")
+        return None
+
+    # normalize image
+    img = ds.pixel_array.astype(float)
+    img = (np.maximum(img, 0) / img.max()) * 255.0
+    img = 255 - img  # Invert grayscale
+    img = np.uint8(img)
+
+    return img
+
+def label_image(image_data, options):
+    max_x, max_y = image_data.shape
+
+    # Set up figure and draw image
+    fig = setup_figure(image_data)
+
+    # Scale annotation settings
+    scale_annotations(fig, options)
+
+    # Write text on image
+    add_positioned_text(options, max_x, max_y)
+
+    file_stem = options.inputDicomFileName.replace('.dcm','')
+    # Save annotated figure to temporary image
+    temp_img_path = f"/tmp/{file_stem}_img.jpg"
+    save_figure_as_image(fig, temp_img_path)
+
+    # Resize and rotate image
+    final_img = resize_and_rotate_image(temp_img_path, target_width=image_data.shape[1])
+
+    # Save final image to output directory
+    output_img_path = os.path.join(options.outputdir, f"{file_stem}.{options.outputImageExtension}")
+    save_image(final_img, output_img_path)
+
+    LOG(f"Input image dimensions: {image_data.shape}")
+    LOG(f"Output image dimensions: {final_img.size}")
+
+def setup_figure(image: np.ndarray) -> plt.Figure:
+    """
+    Set up a matplotlib figure and display an image.
+
+    Args:
+        image (np.ndarray): Image array (e.g., from OpenCV).
+
+    Returns:
+        plt.Figure: Configured matplotlib figure.
+    """
+    plt.style.use('dark_background')
+    plt.axis('off')
+    height, width = image.shape
+    fig = plt.figure(figsize=(width / 100, height / 100))
+    plt.imshow(image, cmap='gray')
+    return fig
+
+def scale_annotations(fig: plt.Figure, options):
+    """
+    Scale annotation parameters (e.g., text, line width) based on image size.
+
+    Args:
+        fig (plt.Figure): Matplotlib figure object.
+        options: Object with annotation settings to scale (e.g., textSize, lineGap).
+    """
+    scale = fig.get_size_inches()[0]
+    options.addTextSize *= scale
+
+def add_positioned_text(options, max_x, max_y):
+    """
+    Adds a text annotation to a matplotlib plot based on the specified position.
+
+    Parameters:
+    ----------
+    options : object
+        An object with the following required attributes:
+            - addTextPos (str): Position of the text. Accepts "top" or "bottom".
+            - addText (str): The text string to display.
+            - addTextColor (str): Color of the text.
+            - addTextSize (int or float): Font size of the text.
+    max_x : int or float
+        The maximum x-coordinate value for the plot area.
+    max_y : int or float
+        The maximum y-coordinate value for the plot area.
+
+    Raises:
+    ------
+    ValueError:
+        If `options.addTextPos` is not "top" or "bottom".
+    """
+    padding = 50
+    if options.addTextPos == "top":
+        x_pos, y_pos = padding, padding + options.addTextSize
+    elif options.addTextPos == "bottom":
+        x_pos, y_pos = padding, max_y - padding
+    else:
+        raise ValueError("Position must be 'top' or 'bottom'")
+
+    plt.text(
+        x_pos, y_pos, options.addText,
+        color=options.addTextColor,
+        fontsize=options.addTextSize
+    )
+
+
+
+def resize_and_rotate_image(image_path: str, target_width: int, rotate_angle: int = 0) -> Image.Image:
+    """
+    Resize and rotate an image to match a target width.
+
+    Args:
+        image_path (str): Path to input image.
+        target_width (int): Desired output width.
+        rotate_angle (int): Degrees to rotate image counter-clockwise.
+
+    Returns:
+        Image.Image: Resized and rotated image.
+    """
+    with Image.open(image_path) as img:
+        original_width, original_height = img.size
+        aspect_ratio = target_width / original_width
+        new_size = (int(original_width * aspect_ratio), int(original_height * aspect_ratio))
+        return img.resize(new_size).rotate(rotate_angle, expand=True)
+
+def save_figure_as_image(fig: plt.Figure, output_path: str):
+    """
+    Save a matplotlib figure as an image file.
+
+    Args:
+        fig (plt.Figure): The figure to save.
+        output_path (str): Target file path.
+    """
+    plt.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    fig.savefig(output_path, bbox_inches='tight', pad_inches=0)
+    plt.clf()
+
+def save_image(image: Image.Image, output_path: str):
+    """
+    Save a PIL Image to a specified path.
+
+    Args:
+        image (Image.Image): Image to save.
+        output_path (str): Destination path including filename.
+    """
+    image.save(output_path)
+    LOG(f"Saved image to {output_path}")
 
 def tagInfo_to_tagStruct(options):
     """

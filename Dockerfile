@@ -13,7 +13,7 @@ WORKDIR ${SRCDIR}
 COPY requirements.txt .
 RUN --mount=type=cache,sharing=private,target=/root/.cache/pip pip install -r requirements.txt
 RUN apt-get update ; apt-get install docker.io -y ; bash
-
+RUN apt-get install ffmpeg libsm6 libxext6  -y
 COPY . .
 ARG extras_require=none
 RUN pip install ".[${extras_require}]" \

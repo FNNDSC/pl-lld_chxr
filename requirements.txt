@@ -1,3 +1,11 @@
 chris_plugin>=0.3.0
 plugin2cube
 python-chrisclient==2.9.1
+pillow
+pydicom
+matplotlib
+# for bug fix on transfer syntax errors
+pylibjpeg
+pylibjpeg-libjpeg
+python-gdcm
+opencv-python
