@@ -33,7 +33,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.1.8'
+__version__ = '1.1.9'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -175,7 +175,7 @@ def preamble_show(options: Namespace) -> None:
     title='A ChRIS plugin to analyze the result produced by an LLD analysis',
     category='',                 # ref. https://chrisstore.co/plugins
     min_memory_limit='1000Mi',    # supported units: Mi, Gi
-    min_cpu_limit='2000m',       # millicores, e.g. "1000m" = 1 CPU core
+    min_cpu_limit='4000m',       # millicores, e.g. "1000m" = 1 CPU core
     min_gpu_limit=0              # set min_gpu_limit=1 to enable GPU
 )
 def main(options: Namespace, inputdir: Path, outputdir: Path):
