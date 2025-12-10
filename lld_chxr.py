@@ -33,7 +33,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.1.9'
+__version__ = '1.2.0'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -191,14 +191,6 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
 
     preamble_show(options)
 
-    # Typically it's easier to think of programs as operating on individual files
-    # rather than directories. The helper functions provided by a ``PathMapper``
-    # object make it easy to discover input files and write to output files inside
-    # the given paths.
-    #
-    # Refer to the documentation for more options, examples, and advanced uses e.g.
-    # adding a progress bar and parallelism.
-
     tagStruct = {}
     if options.tagInfo:
         tagStruct = tagInfo_to_tagStruct(options)
@@ -212,7 +204,7 @@ def main(options: Namespace, inputdir: Path, outputdir: Path):
             status = analyze_measurements(data,tagStruct, options.measurementsUnit, options.limbDifference, options.tibiaDifference, options.femurDifference)
             if status['flag']:
                 LOG("Analysis check successful.")
-                files_dir = copytree(inputdir, outputdir,dirs_exist_ok=True,ignore=ignore_patterns('*.json'))
+                files_dir = copytree(inputdir, outputdir,dirs_exist_ok=True,ignore=ignore_patterns('*.meta.json'))
                 LOG(f"copying files to {files_dir} done.")
             else:
                 LOG(f"QA check failed with exit code {status['exitCode']}")
