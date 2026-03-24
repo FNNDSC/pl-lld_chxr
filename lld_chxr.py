@@ -2,22 +2,23 @@
 
 from pathlib import Path
 from argparse import ArgumentParser, Namespace, ArgumentDefaultsHelpFormatter
-import json
 from chris_plugin import chris_plugin, PathMapper
-import subprocess
 from difflib import SequenceMatcher
+from shutil import copytree, ignore_patterns
+from loguru import logger
+from PIL import Image
+import matplotlib.pyplot as plt
+import numpy as np
+import json
+import subprocess
 import re
 import sys
 import os
-from shutil import copytree, ignore_patterns
 import shutil
-from loguru import logger
 import ntpath
 import pydicom
-from PIL import Image
 import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
+
 
 matplotlib.rcParams['font.family'] = 'monospace'
 LOG             = logger.debug
@@ -45,9 +46,6 @@ DISPLAY_TITLE = r"""
 | |                    ______                   
 |_|                   |______|                  
 """ + "\t\t -- version " + __version__ + " --\n\n"
-
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-import sys
 
 parser = ArgumentParser(
     description='A ChRIS plugin to analyze the result produced by an LLD analysis',

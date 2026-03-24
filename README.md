@@ -5,12 +5,66 @@
 [![ci](https://github.com/FNNDSC/pl-lld_chxr/actions/workflows/ci.yml/badge.svg)](https://github.com/FNNDSC/pl-lld_chxr/actions/workflows/ci.yml)
 
 `pl-lld_chxr` is a [_ChRIS_](https://chrisproject.org/)
-_ds_ plugin which takes in ...  as input files and
-creates ... as output files.
+_ds_ plugin which takes in LLD (leg length discrepancy) analysis results (e.g. JSON files) and produces filtered summaries and annotated images as output.
+
 
 ## Abstract
+This plugin processes outputs from an LLD analysis pipeline and allows:
 
-...
+- Filtering based on measurement differences (limb, tibia, femur)
+- Tag-based filtering and parsing
+- Selection of input files via glob patterns
+- Annotating output images with customizable text overlays
+
+## Parameter Reference
+
+### Input and Filtering Options
+
+| Argument | Type | Default | Description |
+|----------|------|--------|-------------|
+| `-f, --fileFilter` | string | `json` | Input file filter glob (e.g., `json`, `*.json`) |
+
+---
+
+### Measurement Settings
+
+| Argument | Type | Default | Description |
+|----------|------|--------|-------------|
+| `-m, --measurementsUnit` | string | `''` | Accepted unit for length measurements |
+| `-d, --limbDifference` | float | `inf` | Maximum allowed difference between limbs |
+| `-b, --tibiaDifference` | float | `inf` | Maximum allowed tibia difference |
+| `-r, --femurDifference` | float | `inf` | Maximum allowed femur difference |
+
+---
+
+### Tag Parsing Options
+
+| Argument | Type | Default | Description |
+|----------|------|--------|-------------|
+| `-s, --splitToken` | string | `''` | Token used to split input tags |
+| `-k, --splitKeyValue` | string | `''` | Character used to split key-value pairs |
+| `-t, --tagInfo` | string | `''` | Accepted tags and their values |
+
+---
+
+### Image Output Customization
+
+| Argument | Type | Default | Description |
+|----------|------|--------|-------------|
+| `--outputImageExtension` | string | `jpg` | Output image file format |
+| `-q, --addTextPos` | string | `top` | Text position on image (`top` or `bottom`) |
+| `--addText` | string | `''` | Text to overlay on output image |
+| `--addTextSize` | float | `5.0` | Font size of overlay text |
+| `--addTextColor` | string | `white` | Text color |
+| `--addLineSpace` | float | `0.5` | Line spacing (smaller = tighter) |
+
+---
+
+### Version
+
+| Argument | Description |
+|----------|-------------|
+| `-V, --version` | Print plugin version and exit |
 
 ## Installation
 
