@@ -33,7 +33,7 @@ logger.remove()
 logger.opt(colors = True)
 logger.add(sys.stderr, format=logger_format)
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 DISPLAY_TITLE = r"""
        _        _ _     _       _               
@@ -336,9 +336,10 @@ def add_positioned_text(options, max_x, max_y):
         x_pos, y_pos = padding, max_y - padding
     else:
         raise ValueError("Position must be 'top' or 'bottom'")
+    options.addText = options.addText.replace("\\n", "\n")
 
     plt.text(
-        x_pos, y_pos, options.addText,
+        x_pos, y_pos, f"{options.addText}",
         color=options.addTextColor,
         fontsize=options.addTextSize
     )
