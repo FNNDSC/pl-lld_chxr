@@ -144,6 +144,13 @@ parser.add_argument(
     default='white',
     help='Color of additional text on the final output (default: white)'
 )
+parser.add_argument(
+    '--addLineSpace',
+    dest='addLineSpace',
+    type=float,
+    default=0.5,
+    help='Line space in additional text on the final output, smaller = tighter (default: 0.5)'
+)
 
 # Version
 parser.add_argument(
@@ -329,19 +336,22 @@ def add_positioned_text(options, max_x, max_y):
     ValueError:
         If `options.addTextPos` is not "top" or "bottom".
     """
-    padding = 50
+    padding = 100
     if options.addTextPos == "top":
         x_pos, y_pos = padding, padding + options.addTextSize
     elif options.addTextPos == "bottom":
         x_pos, y_pos = padding, max_y - padding
     else:
         raise ValueError("Position must be 'top' or 'bottom'")
+
+    # handles multiline text
     options.addText = options.addText.replace("\\n", "\n")
 
     plt.text(
-        x_pos, y_pos, f"{options.addText}",
+        x_pos, y_pos, options.addText,
         color=options.addTextColor,
-        fontsize=options.addTextSize
+        fontsize=options.addTextSize,
+        linespacing=options.addLineSpace
     )
 
 
